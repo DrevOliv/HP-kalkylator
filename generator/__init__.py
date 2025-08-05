@@ -1,0 +1,1 @@
+from generator.fetch_course import fetch_courses

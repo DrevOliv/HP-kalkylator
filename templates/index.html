@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Poängräknare - {{ EDUCATION_NAME | safe }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .course {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        .subpoints {
+            margin-left: 20px;
+        }
+        label {
+            margin-left: 5px;
+        }
+        #sidebar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            padding: 15px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        #sidebar h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h3>Totalt valda poäng:</h3>
+        <p><span id="totalPoints">0</span> hp</p>
+    </div>
+
+    <h1>Poängräknare - {{ EDUCATION_NAME | safe }}</h1>
+    <h2>Välj avklarade kurser eller delmoment</h2>
+
+    <div id="courses"></div>
+
+    <h3>Totalt valda poäng: <span id="totalPoints">0</span> hp</h3>
+
+    <script>
+        const data = {{ yearly_courses | safe }}
+
+        function renderCourses() {
+            const container = document.getElementById('courses');
+            for (const year in data) {
+                const yearHeader = document.createElement('h3');
+                yearHeader.textContent = `År ${year}`;
+                container.appendChild(yearHeader);
+
+                data[year].forEach(course => {
+                    const courseDiv = document.createElement('div');
+                    courseDiv.className = 'course';
+
+                    const courseCheckbox = document.createElement('input');
+                    courseCheckbox.type = 'checkbox';
+                    courseCheckbox.className = 'course-checkbox';
+
+                    const courseLabel = document.createElement('label');
+                    courseLabel.innerHTML = `<strong>${course.kurskod}</strong> – ${course.kursnamn} (${course.hp} hp, ${course.termin}, period ${course.period})`;
+
+                    courseDiv.appendChild(courseCheckbox);
+                    courseDiv.appendChild(courseLabel);
+                    courseDiv.appendChild(document.createElement('br'));
+
+                    const subDiv = document.createElement('div');
+                    subDiv.className = 'subpoints';
+
+                    course.hp_uppdelning.forEach(part => {
+                        const partCheckbox = document.createElement('input');
+                        partCheckbox.type = 'checkbox';
+                        partCheckbox.className = 'subpoint-checkbox';
+                        partCheckbox.dataset.points = part.Omfattning;
+
+                        const partLabel = document.createElement('label');
+                        partLabel.innerHTML = ` ${part.Kod} – ${part.Benämning} (${part.Omfattning} hp)`;
+
+                        subDiv.appendChild(partCheckbox);
+                        subDiv.appendChild(partLabel);
+                        subDiv.appendChild(document.createElement('br'));
+                    });
+
+                    courseCheckbox.addEventListener('change', function() {
+                        const subCheckboxes = subDiv.querySelectorAll('.subpoint-checkbox');
+                        subCheckboxes.forEach(cb => cb.checked = courseCheckbox.checked);
+                        updateTotal();
+                    });
+
+                    subDiv.addEventListener('change', updateTotal);
+
+                    courseDiv.appendChild(subDiv);
+                    container.appendChild(courseDiv);
+                });
+            }
+        }
+
+        function updateTotal() {
+            const subCheckboxes = document.querySelectorAll('.subpoint-checkbox:checked');
+            let total = 0;
+            subCheckboxes.forEach(cb => {
+                total += parseFloat(cb.dataset.points);
+            });
+            document.getElementById('totalPoints').textContent = total;
+        }
+
+        renderCourses();
+    </script>
+</body>
+</html>
